@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S&OP Exception Planning - Capacity Planning Overview (v2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    /* ─── Modern Harmony Design System Tokens ─── */
+    :root {
+      /* Core Typography */
+      --core_typeface_switzer: 'Switzer', system-ui, -apple-system, sans-serif;
+
+      /* Color Decision Tokens */
+      --dec_color_text_label: #282828;
+      --dec_color_text_secondary: #6b6b6b;
+      --dec_color_text_placeholder: #9e9e9e;
+      --dec_color_text_disabled: #b0b0b0;
+
+      /* Surface / Background */
+      --dec_color_surface_primary: #ffffff;
+      --dec_color_surface_secondary: #f7f7f7;
+      --dec_color_surface_tertiary: #f0f0f4;
+
+      /* Primary / Brand (Modern Harmony secondary tokens) */
+      --dec_color_secondary_strong: #8342bb;
+      --dec_color_secondary_foreground: #7239a4;
+      --dec_color_brand_base: #282828;
+      --dec_color_secondary_light: #f5f0fa;
+
+      /* Secondary (Pill) */
+      --dec_color_secondary_base: #e4daef;
+      --dec_color_secondary_text: #282828;
+
+      /* Accent / Switch */
+      --dec_color_switch_selected: #B9ACE8;
+      --dec_color_switch_indicator: #ffffff;
+
+      /* Button Tokens */
+      --dec_color_disabled_subtle: #fbfbfb;
+      --dec_color_disabled_border: #cccccc;
+      --dec_element_hzpadding: 16px;
+      --dec_element_vtpadding: 8px;
+
+      /* Grid Tokens */
+      --dec_color_header-cell_fill: #f0f0f4;
+      --dec_color_grid-cell_border: #e5e5ec;
+      --dec_color_grid_alt-row: #fbfbfb;
+      --dec_color_grid-input-cell_border: #4b4a5d;
+      --dec_grid-cell_hzpadding: 12px;
+      --dec_grid-cell_hzmargin: 12px;
+
+      /* Grid Cell Alert Colors (Modern Harmony decision tokens) */
+      --dec_color_error_subtle: #fbece9;
+      --dec_color_error_foreground: #981e15;
+      --dec_color_warning_subtle: #fff4e5;
+      --dec_color_warning_foreground: #92400e;
+      --dec_color_info_subtle: #fff9e6;
+      --dec_color_info_foreground: #854d0e;
+      --dec_color_success_subtle: #e8f5e9;
+      --dec_color_success_foreground: #1b5e20;
+
+      /* Spacing */
+      --core_sp_rem: 4px;
+      --core_sp_rem2: 8px;
+      --core_sp_rem3: 12px;
+      --core_sp_rem4: 16px;
+      --core_sp_rem5: 20px;
+      --core_sp_rem6: 24px;
+
+      /* Border Radius */
+      --dec_base_crn: 8px;
+      --dec_pill_crn: 16px;
+      --dec_switch_crn: 16px;
+
+      /* Line Heights */
+      --line-height-md: 16px;
+      --line-height-lg: 20px;
+      --line-height-xl: 24px;
+
+      /* Text Sizes */
+      --dec_text_size_label_sm: 12px;
+      --dec_text_size_label_md: 14px;
+      --dec_text_size_body_md: 14px;
+      --dec_text_size_heading_xl: 30px;
+
+      /* App Header (Modern Harmony tokens) */
+      --dec_color_surface_header: #ffffff;
+      --dec_color_div_base: #e5e5ec;
+      --dec_app-header_height: 56px;
+    }
+
+    /* Switzer font via fontsource CDN */
+    @font-face {
+      font-family: 'Switzer';
+      src: url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-300-normal.woff2') format('woff2');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Switzer';
+      src: url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-400-normal.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Switzer';
+      src: url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-500-normal.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Switzer';
+      src: url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-600-normal.woff2') format('woff2');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Switzer';
+      src: url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * { font-family: var(--core_typeface_switzer); margin: 0; box-sizing: border-box; }
+    body { margin: 0; background: var(--dec_color_surface_primary); color: var(--dec_color_text_label); }
+
+    .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
+
+    @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .ai-pulse { animation: pulse 2s ease-in-out infinite; }
+    .ai-glow { box-shadow: 0 0 0 2px rgba(131,66,187,0.3), 0 0 12px rgba(131,66,187,0.15); }
+
+    /* DS Grid Cell styles */
+    .grid-cell { transition: background 0.15s; }
+    .grid-cell:hover { background: var(--dec_color_surface_secondary); }
+
+    .cell-alert-critical {
+      background: var(--dec_color_error_subtle);
+      color: var(--dec_color_error_foreground);
+    }
+    .cell-alert-high {
+      background: var(--dec_color_warning_subtle);
+      color: var(--dec_color_warning_foreground);
+    }
+    .cell-alert-medium {
+      background: var(--dec_color_info_subtle);
+      color: var(--dec_color_info_foreground);
+    }
+    .cell-alert-low {
+      background: #fefce8;
+      color: #854d0e;
+    }
+
+    /* DS Switch component */
+    .ds-switch {
+      width: 48px;
+      height: 24px;
+      border-radius: var(--dec_switch_crn);
+      padding: 2px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+    }
+    .ds-switch.on { background: var(--dec_color_switch_selected); justify-content: flex-end; }
+    .ds-switch.off { background: #c4c4c4; justify-content: flex-start; }
+    .ds-switch-knob {
+      width: 20px;
+      height: 20px;
+      border-radius: 20px;
+      background: var(--dec_color_switch_indicator);
+      box-shadow: 0px 1px 2px 0px rgba(25,34,61,0.12), 0px 1px 3px 0px rgba(25,34,61,0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* DS Button */
+    .ds-btn {
+      font-family: var(--core_typeface_switzer);
+      font-weight: 500;
+      font-size: var(--dec_text_size_label_md);
+      line-height: var(--line-height-md);
+      letter-spacing: 0.07px;
+      padding: var(--dec_element_vtpadding) var(--dec_element_hzpadding);
+      border-radius: var(--dec_base_crn);
+      border: 1px solid var(--dec_color_disabled_border);
+      background: var(--dec_color_disabled_subtle);
+      color: var(--dec_color_text_label);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ds-btn:hover { background: #f0f0f0; }
+    .ds-btn-primary {
+      background: var(--dec_color_secondary_strong);
+      color: #ffffff;
+      border-color: var(--dec_color_secondary_strong);
+    }
+    .ds-btn-primary:hover { background: var(--dec_color_secondary_foreground); }
+
+    /* DS Pill */
+    .ds-pill {
+      font-family: var(--core_typeface_switzer);
+      font-weight: 400;
+      font-size: var(--dec_text_size_label_sm);
+      line-height: var(--line-height-md);
+      letter-spacing: 0.07px;
+      padding: 4px 12px;
+      border-radius: var(--dec_pill_crn);
+      border: 1px solid var(--dec_color_secondary_base);
+      background: var(--dec_color_secondary_base);
+      color: var(--dec_color_secondary_text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ds-pill.active {
+      background: var(--dec_color_secondary_strong);
+      color: #ffffff;
+      border-color: var(--dec_color_secondary_strong);
+    }
+    .ds-pill:hover:not(.active) { opacity: 0.8; }
+
+    /* DS Pill variants for thresholds */
+    .ds-pill-critical { background: var(--dec_color_error_subtle); border-color: #f5c6c0; color: var(--dec_color_error_foreground); }
+    .ds-pill-high { background: var(--dec_color_warning_subtle); border-color: #fde0b0; color: var(--dec_color_warning_foreground); }
+    .ds-pill-medium { background: var(--dec_color_info_subtle); border-color: #fde68a; color: var(--dec_color_info_foreground); }
+    .ds-pill-low { background: #fefce8; border-color: #fde047; color: #854d0e; }
+
+    /* Grid header cell */
+    .ds-header-cell {
+      background: var(--dec_color_header-cell_fill);
+      border: 0.5px solid var(--dec_color_grid-cell_border);
+      font-family: var(--core_typeface_switzer);
+      font-weight: 500;
+      font-size: var(--dec_text_size_label_md);
+      line-height: var(--line-height-md);
+      letter-spacing: 0.07px;
+      color: var(--dec_color_text_label);
+      padding: var(--core_sp_rem2) var(--dec_grid-cell_hzmargin);
+    }
+
+    /* Grid data cell */
+    .ds-data-cell {
+      border: 0.5px solid var(--dec_color_grid-cell_border);
+      font-family: var(--core_typeface_switzer);
+      font-weight: 400;
+      font-size: var(--dec_text_size_label_md);
+      line-height: var(--line-height-md);
+      letter-spacing: 0.07px;
+      padding: var(--core_sp_rem3) var(--dec_grid-cell_hzpadding);
+    }
+
+    /* Version Switcher */
+    .version-bar {
+      background: var(--dec_color_surface_tertiary);
+      border-bottom: 1px solid var(--dec_color_grid-cell_border);
+    }
+    .version-tab {
+      font-family: var(--core_typeface_switzer);
+      font-weight: 500;
+      font-size: var(--dec_text_size_label_sm);
+      padding: 6px 16px;
+      border-radius: var(--dec_base_crn) var(--dec_base_crn) 0 0;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--dec_color_text_secondary);
+      background: transparent;
+      border: none;
+    }
+    .version-tab.active {
+      background: var(--dec_color_surface_primary);
+      color: var(--dec_color_secondary_strong);
+      font-weight: 600;
+      box-shadow: 0 -2px 0 0 var(--dec_color_secondary_strong) inset;
+    }
+    .version-tab:hover:not(.active) {
+      color: var(--dec_color_text_label);
+      background: rgba(255,255,255,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, useRef, useMemo } = React;
+
+    // ─── Data & Constants ───────────────────────────────────────────
+    const GRID_DATA = [
+      { id: 1, product: 'Lenovo Thinkpad T14', customer: 'Amazon Retail', dc: 'EU Central', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 14567, 'FY24 Q4': 12345, 'Nov 2024': 18901, '10/28/2024': 16789, '11/04/2024': 6002, '11/11/2024': null, '11/18/2024': 2934, '11/25/2024': 3201, '12/02/2024': 4512, '12/09/2024': 3890, '12/16/2024': 2100, '12/23/2024': 1800, '12/30/2024': 950 },
+        alerts: { 'FY 2024': 'critical', 'FY24 Q4': 'critical', 'Nov 2024': 'high', '10/28/2024': 'high', '11/04/2024': 'critical', '11/18/2024': 'medium' }
+      },
+      { id: 2, product: 'Lenovo Thinkpad T14', customer: 'Amazon Retail', dc: 'EU Central', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 9101, 'FY24 Q4': 5678, 'Nov 2024': 3456, '10/28/2024': 4567, '11/04/2024': null, '11/11/2024': null, '11/18/2024': null, '11/25/2024': 5600, '12/02/2024': 4800, '12/09/2024': 3200, '12/16/2024': 2900, '12/23/2024': 2100, '12/30/2024': 1050 },
+        alerts: {}
+      },
+      { id: 3, product: 'Lenovo Thinkpad T14', customer: 'Amazon Retail', dc: 'EU Central', timeSeries: 'Consensus Demand Plan (Cost)',
+        values: { 'FY 2024': 120529, 'FY24 Q4': 120203, 'Nov 2024': 120123, '10/28/2024': 110529, '11/04/2024': 110539, '11/11/2024': 120239, '11/18/2024': 120529, '11/25/2024': 118900, '12/02/2024': 115600, '12/09/2024': 112300, '12/16/2024': 109800, '12/23/2024': 107500, '12/30/2024': 105200 },
+        alerts: {}
+      },
+      { id: 4, product: 'Lenovo Thinkpad X1', customer: 'Best Buy', dc: 'US West', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 22340, 'FY24 Q4': 18560, 'Nov 2024': 15230, '10/28/2024': 12890, '11/04/2024': 8900, '11/11/2024': 4500, '11/18/2024': 3200, '11/25/2024': 6700, '12/02/2024': 5400, '12/09/2024': 4100, '12/16/2024': 3300, '12/23/2024': 2800, '12/30/2024': 1500 },
+        alerts: { 'FY 2024': 'high', 'FY24 Q4': 'high', 'Nov 2024': 'medium', '10/28/2024': 'medium', '11/04/2024': 'critical' }
+      },
+      { id: 5, product: 'Lenovo Thinkpad X1', customer: 'Best Buy', dc: 'US West', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 15200, 'FY24 Q4': 11800, 'Nov 2024': 9400, '10/28/2024': 7800, '11/04/2024': 6200, '11/11/2024': 5100, '11/18/2024': 4300, '11/25/2024': 7200, '12/02/2024': 6100, '12/09/2024': 4900, '12/16/2024': 3800, '12/23/2024': 3100, '12/30/2024': 1700 },
+        alerts: {}
+      },
+      { id: 6, product: 'Lenovo Thinkpad X1', customer: 'Best Buy', dc: 'US West', timeSeries: 'Consensus Demand Plan (Cost)',
+        values: { 'FY 2024': 98500, 'FY24 Q4': 85200, 'Nov 2024': 72100, '10/28/2024': 65400, '11/04/2024': 58900, '11/11/2024': 52300, '11/18/2024': 48700, '11/25/2024': 78900, '12/02/2024': 71200, '12/09/2024': 65400, '12/16/2024': 59800, '12/23/2024': 54100, '12/30/2024': 48500 },
+        alerts: {}
+      },
+      { id: 7, product: 'Dell Latitude 5540', customer: 'Walmart', dc: 'US East', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 31200, 'FY24 Q4': 25800, 'Nov 2024': 21400, '10/28/2024': 18900, '11/04/2024': 15200, '11/11/2024': 11800, '11/18/2024': 8400, '11/25/2024': 9200, '12/02/2024': 7800, '12/09/2024': 6500, '12/16/2024': 5200, '12/23/2024': 4100, '12/30/2024': 2800 },
+        alerts: { 'FY 2024': 'critical', 'FY24 Q4': 'high', 'Nov 2024': 'high', '10/28/2024': 'medium', '11/04/2024': 'high', '11/11/2024': 'medium' }
+      },
+      { id: 8, product: 'Dell Latitude 5540', customer: 'Walmart', dc: 'US East', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 18900, 'FY24 Q4': 14200, 'Nov 2024': 11600, '10/28/2024': 9800, '11/04/2024': 7500, '11/11/2024': 6200, '11/18/2024': 5100, '11/25/2024': 8400, '12/02/2024': 7100, '12/09/2024': 5900, '12/16/2024': 4800, '12/23/2024': 3900, '12/30/2024': 2400 },
+        alerts: {}
+      },
+      { id: 9, product: 'HP ProBook 450', customer: 'CDW Corp', dc: 'APAC', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 8900, 'FY24 Q4': 6700, 'Nov 2024': 5200, '10/28/2024': 4100, '11/04/2024': 3200, '11/11/2024': 2400, '11/18/2024': 1800, '11/25/2024': 4500, '12/02/2024': 3800, '12/09/2024': 3100, '12/16/2024': 2500, '12/23/2024': 1900, '12/30/2024': 1200 },
+        alerts: { 'FY 2024': 'medium', 'FY24 Q4': 'low', 'Nov 2024': 'low' }
+      },
+      { id: 10, product: 'HP ProBook 450', customer: 'CDW Corp', dc: 'APAC', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 7200, 'FY24 Q4': 5400, 'Nov 2024': 4100, '10/28/2024': 3300, '11/04/2024': 2600, '11/11/2024': 2100, '11/18/2024': 1600, '11/25/2024': 4100, '12/02/2024': 3500, '12/09/2024': 2800, '12/16/2024': 2200, '12/23/2024': 1700, '12/30/2024': 1100 },
+        alerts: {}
+      },
+      { id: 11, product: 'HP ProBook 450', customer: 'CDW Corp', dc: 'APAC', timeSeries: 'Consensus Demand Plan (Cost)',
+        values: { 'FY 2024': 45600, 'FY24 Q4': 38900, 'Nov 2024': 32100, '10/28/2024': 28700, '11/04/2024': 25400, '11/11/2024': 22100, '11/18/2024': 19800, '11/25/2024': 35600, '12/02/2024': 31200, '12/09/2024': 27800, '12/16/2024': 24500, '12/23/2024': 21200, '12/30/2024': 18900 },
+        alerts: {}
+      }
+    ];
+
+    const TIME_COLUMNS = ['FY 2024','FY24 Q4','Nov 2024','10/28/2024','11/04/2024','11/11/2024','11/18/2024','11/25/2024','12/02/2024','12/09/2024','12/16/2024','12/23/2024','12/30/2024'];
+
+    const AI_SUGGESTIONS = [
+      { id: 1, type: 'critical', title: 'Revenue at Risk — EU Central', description: 'Finance vs Consensus gap for Lenovo T14 at Amazon Retail has widened 34% over 3 weeks. The 11/04 period shows a $6,002 variance with no finance plan coverage.', action: 'Auto-align Finance Plan', impact: 'Close $14.5K gap', affectedRows: [1, 2], affectedCols: ['11/04/2024', '11/11/2024'] },
+      { id: 2, type: 'high', title: 'Demand Spike Detected — US West', description: 'Best Buy orders for Thinkpad X1 trending 42% above forecast for Nov 2024. Historical pattern suggests holiday pull-forward.', action: 'Adjust Forecast +15%', impact: 'Prevent $22K stockout', affectedRows: [4, 5], affectedCols: ['Nov 2024', '10/28/2024'] },
+      { id: 3, type: 'medium', title: 'Consensus Gap Widening — US East', description: 'Dell Latitude 5540 finance plan consistently undershoots consensus by 18-25%. Statistical models suggest convergence if finance plan is increased by 12%.', action: 'Apply ML Correction', impact: 'Reduce variance 60%', affectedRows: [7, 8], affectedCols: ['FY 2024', 'FY24 Q4'] },
+      { id: 4, type: 'low', title: 'Optimization Opportunity — APAC', description: 'HP ProBook 450 shows stable demand trajectory with low variance. Can reduce safety stock by 8% and redeploy capital.', action: 'Optimize Stock', impact: 'Free up $18K capital', affectedRows: [9, 10, 11], affectedCols: ['FY 2024'] }
+    ];
+
+    const VERSIONS = [
+      { id: 'v1', label: 'Version 1 — Base Prototype', file: 'index.html' },
+      { id: 'v2', label: 'Version 2 — Modern Harmony DS', file: 'version-2.html', active: true },
+    ];
+
+    // ─── DS Icons (inline SVG matching Figma components) ───────────
+    const Icon = ({ name, size = 16, className = '' }) => {
+      const icons = {
+        left_panel_open: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>,
+        search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+        expand_more: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+        notifications: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+        chevronRight: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+        star: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+        filter: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
+        save: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>,
+        download: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+        maximize: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>,
+        monitor: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>,
+        columns: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>,
+        moreVertical: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
+        sparkles: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>,
+        check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
+        x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+        send: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>,
+        zap: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>,
+        alertTriangle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>,
+        trendingUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+        target: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+        lightbulb: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
+        arrowUpDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>,
+        flag: <svg width={size} height={size} viewBox="0 0 12 12" fill="currentColor"><path d="M1 1v10h1V7h4l1 1h4V1H7L6 2H2z"/></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+      };
+      return <span className={className} style={{display:'inline-flex',alignItems:'center'}}>{icons[name]}</span>;
+    };
+
+    // ─── Version Switcher Bar ──────────────────────────────────────
+    const VersionSwitcher = () => {
+      const handleVersionClick = (version) => {
+        if (!version.active) {
+          window.location.href = version.file;
+        }
+      };
+      return (
+        <div className="version-bar" style={{display:'flex',alignItems:'flex-end',paddingLeft:20,paddingRight:20,paddingTop:4,gap:4}}>
+          {VERSIONS.map(v => (
+            <button key={v.id} className={`version-tab ${v.active ? 'active' : ''}`} onClick={() => handleVersionClick(v)}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      );
+    };
+
+    // ─── DS App Header (Modern Harmony tokens) ─────────────────
+    const AppHeader = () => (
+      <header style={{
+        height: 'var(--dec_app-header_height)',
+        background: 'var(--dec_color_surface_header)',
+        borderBottom: '1px solid var(--dec_color_div_base)',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 20px',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{display:'flex',alignItems:'center',gap:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <Icon name="left_panel_open" size={20} className="" />
+            <div style={{
+              width: 28, height: 28,
+              background: 'var(--dec_color_secondary_strong)',
+              borderRadius: 'var(--dec_base_crn)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <span style={{color:'#fff',fontSize:11,fontWeight:700}}>e2</span>
+            </div>
+            <span style={{fontWeight:600,fontSize:'var(--dec_text_size_label_md)',color:'var(--dec_color_text_label)'}}>e2open</span>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:4,fontSize:'var(--dec_text_size_label_sm)',color:'var(--dec_color_text_secondary)'}}>
+            <span>Sales & Operation Planning</span>
+            <Icon name="expand_more" size={14} />
+            <span style={{color:'var(--dec_color_grid-cell_border)'}}>/</span>
+            <span>Exception Dashboard</span>
+            <Icon name="expand_more" size={14} />
+          </div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{position:'relative'}}>
+            <input type="text" placeholder="What are you looking for?"
+              style={{
+                border: '1px solid var(--dec_color_disabled_border)',
+                borderRadius: 'var(--dec_base_crn)',
+                padding: '6px 32px 6px 12px',
+                fontSize: 'var(--dec_text_size_label_sm)',
+                width: 220,
+                fontFamily: 'var(--core_typeface_switzer)',
+                outline: 'none',
+                color: 'var(--dec_color_text_label)',
+                background: 'var(--dec_color_surface_primary)'
+              }}
+            />
+            <span style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',color:'var(--dec_color_text_placeholder)'}}>
+              <Icon name="search" size={14} />
+            </span>
+          </div>
+          <button className="ds-btn ds-btn-primary" style={{display:'flex',alignItems:'center',gap:6,fontSize:'var(--dec_text_size_label_sm)',padding:'6px 12px'}}>
+            <Icon name="sparkles" size={14} />
+            Assistant
+          </button>
+          <Icon name="notifications" size={18} className="" style={{cursor:'pointer',color:'var(--dec_color_text_secondary)'}} />
+          <div style={{display:'flex',alignItems:'center',gap:8,marginLeft:4}}>
+            <div style={{textAlign:'right'}}>
+              <div style={{fontSize:'var(--dec_text_size_label_sm)',fontWeight:600,color:'var(--dec_color_text_label)'}}>Adam Smith</div>
+              <div style={{fontSize:10,color:'var(--dec_color_text_secondary)'}}>Demand Planner</div>
+            </div>
+            <div style={{
+              width:32, height:32, borderRadius:'50%',
+              background: 'var(--dec_color_secondary_base)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              color:'var(--dec_color_secondary_strong)', fontSize:'var(--dec_text_size_label_sm)', fontWeight:600
+            }}>AS</div>
+          </div>
+        </div>
+      </header>
+    );
+
+    // ─── DS Page Title (matches Figma Headline/XL - Light) ─────────
+    const PageTitle = () => (
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 20px'}}>
+        <span style={{
+          fontFamily:'var(--core_typeface_switzer)',
+          fontWeight:300,
+          fontSize:'var(--dec_text_size_heading_xl)',
+          lineHeight:'32px',
+          letterSpacing:'-0.3px',
+          color:'var(--dec_color_text_label)'
+        }}>Exception Dashboard</span>
+        <span style={{color:'var(--dec_color_text_secondary)',fontSize:20}}>›</span>
+        <span style={{
+          fontFamily:'var(--core_typeface_switzer)',
+          fontWeight:500,
+          fontSize:'var(--dec_text_size_heading_xl)',
+          lineHeight:'32px',
+          letterSpacing:'-0.3px',
+          color:'var(--dec_color_text_label)'
+        }}>Capacity Planning Overview</span>
+        <span style={{cursor:'pointer',color:'var(--dec_color_text_secondary)'}}>
+          <Icon name="star" size={18} />
+        </span>
+      </div>
+    );
+
+    // ─── DS Toolbar ────────────────────────────────────────────────
+    const Toolbar = ({ activeThreshold, setActiveThreshold, onAIToggle, aiPanelOpen }) => (
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding: '6px 20px',
+        borderBottom: '1px solid var(--dec_color_grid-cell_border)'
+      }}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <button className="ds-btn" style={{fontSize:'var(--dec_text_size_label_sm)',padding:'4px 12px'}}>Submit</button>
+          <button className="ds-btn" style={{fontSize:'var(--dec_text_size_label_sm)',padding:'4px 12px'}}>Reset</button>
+          <button className="ds-btn" style={{fontSize:'var(--dec_text_size_label_sm)',padding:'4px 12px',color:'var(--dec_color_text_secondary)'}}>Cancel</button>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          {/* DS Threshold Pills */}
+          {['All Thresholds','Critical','High','Medium','Low'].map(t => {
+            const isActive = activeThreshold === t;
+            let cn = 'ds-pill';
+            if (isActive) cn += ' active';
+            else if (t === 'Critical') cn = 'ds-pill ds-pill-critical';
+            else if (t === 'High') cn = 'ds-pill ds-pill-high';
+            else if (t === 'Medium') cn = 'ds-pill ds-pill-medium';
+            else if (t === 'Low') cn = 'ds-pill ds-pill-low';
+            return (
+              <button key={t} className={cn} onClick={() => setActiveThreshold(t)}>
+                {t}
+              </button>
+            );
+          })}
+          <div style={{width:1,height:16,background:'var(--dec_color_grid-cell_border)',margin:'0 4px'}} />
+          <button className={`ds-btn ${aiPanelOpen ? 'ds-btn-primary' : ''}`}
+            onClick={onAIToggle}
+            style={{display:'flex',alignItems:'center',gap:6,fontSize:'var(--dec_text_size_label_sm)',padding:'4px 12px'}}>
+            <Icon name="sparkles" size={13} />
+            AI Insights
+          </button>
+          <div style={{width:1,height:16,background:'var(--dec_color_grid-cell_border)',margin:'0 4px'}} />
+          {[{icon:'settings',tip:'Settings'},{icon:'save',tip:'Save'},{icon:'monitor',tip:'Dashboard'},{icon:'maximize',tip:'Fullscreen'},{icon:'refresh',tip:'Refresh'},{icon:'columns',tip:'Columns'},{icon:'download',tip:'Export'},{icon:'moreVertical',tip:'More'}].map(b => (
+            <button key={b.icon} title={b.tip}
+              style={{
+                padding:6, color:'var(--dec_color_text_secondary)',
+                cursor:'pointer', background:'none', border:'none',
+                borderRadius:'var(--dec_base_crn)',
+                transition:'all 0.15s'
+              }}
+              onMouseOver={e => e.currentTarget.style.background='var(--dec_color_surface_secondary)'}
+              onMouseOut={e => e.currentTarget.style.background='none'}>
+              <Icon name={b.icon} size={16} />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+
+    // ─── DS Quick Filters (Switch component) ───────────────────────
+    const DSSwitch = ({ checked, onChange, label }) => (
+      <div style={{display:'flex',alignItems:'center',gap:'var(--core_sp_rem2)'}}>
+        <div className={`ds-switch ${checked ? 'on' : 'off'}`} onClick={onChange}>
+          <div className="ds-switch-knob">
+            {checked && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--dec_color_secondary_strong)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+            )}
+          </div>
+        </div>
+        <span style={{
+          fontFamily:'var(--core_typeface_switzer)',
+          fontWeight:400,
+          fontSize:'var(--dec_text_size_label_md)',
+          lineHeight:'var(--line-height-md)',
+          letterSpacing:'0.07px',
+          color:'var(--dec_color_text_label)'
+        }}>{label}</span>
+      </div>
+    );
+
+    const QuickFilters = ({ toggles, setToggles }) => {
+      const totalItems = GRID_DATA.length;
+      return (
+        <div style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding: '8px 20px',
+          borderBottom: '1px solid var(--dec_color_grid-cell_border)',
+          background: 'var(--dec_color_surface_primary)'
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:24}}>
+            {Object.entries(toggles).map(([key, val]) => (
+              <DSSwitch key={key} checked={val} label={key} onChange={() => setToggles(p => ({...p, [key]: !p[key]}))} />
+            ))}
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:'var(--dec_text_size_label_sm)',color:'var(--dec_color_text_secondary)'}}>
+              Displaying {totalItems} of {totalItems} item(s)
+            </span>
+            <span style={{cursor:'pointer',color:'var(--dec_color_text_secondary)'}}>
+              <Icon name="refresh" size={14} />
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── Chart Filter Bar ──────────────────────────────────────────
+    const ChartFilterBar = ({ expanded, setExpanded }) => (
+      <div style={{borderBottom:'1px solid var(--dec_color_grid-cell_border)'}}>
+        <div style={{
+          display:'flex',alignItems:'center',justifyContent:'space-between',
+          padding:'6px 20px',cursor:'pointer'
+        }} onClick={() => setExpanded(!expanded)}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <Icon name={expanded ? 'expand_more' : 'chevronRight'} size={16} className="" />
+            <span style={{fontSize:'var(--dec_text_size_label_sm)',fontWeight:500,color:'var(--dec_color_text_label)'}}>Chart view</span>
+          </div>
+          <button style={{padding:4,background:'none',border:'none',cursor:'pointer',color:'var(--dec_color_text_secondary)'}} onClick={e => e.stopPropagation()}>
+            <Icon name="maximize" size={14} />
+          </button>
+        </div>
+      </div>
+    );
+
+    // ─── DS Data Grid ──────────────────────────────────────────────
+    const DataGrid = ({ data, activeThreshold, highlightedRows, highlightedCols, onCellClick, editingCell, setEditingCell, cellValues, setCellValues }) => {
+      const filteredData = useMemo(() => {
+        if (activeThreshold === 'All Thresholds') return data;
+        const level = activeThreshold.toLowerCase();
+        return data.filter(row => Object.values(row.alerts).includes(level));
+      }, [data, activeThreshold]);
+
+      const formatNum = (n) => n === null || n === undefined ? '-' : n.toLocaleString();
+
+      const getAlertClass = (level) => {
+        switch(level) {
+          case 'critical': return 'cell-alert-critical';
+          case 'high': return 'cell-alert-high';
+          case 'medium': return 'cell-alert-medium';
+          case 'low': return 'cell-alert-low';
+          default: return '';
+        }
+      };
+
+      return (
+        <div style={{flex:1,overflow:'hidden',borderTop:'1px solid var(--dec_color_grid-cell_border)'}}>
+          <div style={{display:'flex',height:'100%'}}>
+            {/* Frozen columns */}
+            <div className="scrollbar-thin" style={{flexShrink:0,borderRight:'2px solid var(--dec_color_grid-cell_border)',overflowY:'auto',width:700}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'var(--dec_text_size_label_md)'}}>
+                <thead style={{position:'sticky',top:0,zIndex:10}}>
+                  {/* Multi-level header: Hierarchy */}
+                  <tr>
+                    <th className="ds-header-cell" style={{width:40,textAlign:'left',fontWeight:500}} rowSpan={4}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <span style={{color:'var(--dec_color_text_label)'}}>#</span>
+                      </div>
+                    </th>
+                    <th className="ds-header-cell" style={{width:150,textAlign:'left',fontWeight:500}} rowSpan={4}>
+                      <div style={{display:'flex',alignItems:'center',gap:4}}>
+                        <span>Product Description</span>
+                        <Icon name="arrowUpDown" size={10} className="" />
+                      </div>
+                    </th>
+                    <th className="ds-header-cell" style={{width:130,textAlign:'left',fontWeight:500}} rowSpan={4}>Customer Desc</th>
+                    <th className="ds-header-cell" style={{width:120,textAlign:'left',fontWeight:500}} rowSpan={4}>DC Description</th>
+                    <th className="ds-header-cell" style={{textAlign:'left',fontWeight:500}} rowSpan={4}>
+                      <div style={{display:'flex',alignItems:'center',gap:4}}>
+                        <Icon name="filter" size={10} className="" />
+                        <span>Time Series</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((row, i) => (
+                    <tr key={row.id} style={{
+                      background: highlightedRows.includes(row.id) ? 'var(--dec_color_secondary_light)' :
+                        i % 2 === 0 ? 'var(--dec_color_surface_primary)' : 'var(--dec_color_grid_alt-row)'
+                    }}>
+                      <td className="ds-data-cell" style={{textAlign:'center',color:'var(--dec_color_text_secondary)',width:40}}>{row.id}</td>
+                      <td className="ds-data-cell" style={{fontWeight:500,width:150}}>{row.product}</td>
+                      <td className="ds-data-cell" style={{color:'var(--dec_color_text_secondary)',width:130}}>{row.customer}</td>
+                      <td className="ds-data-cell" style={{width:120}}>{row.dc}</td>
+                      <td className="ds-data-cell" style={{fontWeight:500}}>{row.timeSeries}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Scrollable time columns */}
+            <div className="scrollbar-thin" style={{flex:1,overflow:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'var(--dec_text_size_label_md)'}}>
+                <thead style={{position:'sticky',top:0,zIndex:10}}>
+                  {/* Multi-level hierarchy headers */}
+                  <tr>
+                    <th className="ds-header-cell" style={{textAlign:'center',fontWeight:500}} colSpan={13}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                        <span style={{color:'var(--dec_color_text_secondary)'}}>←</span> FY 2024
+                      </div>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th className="ds-header-cell" style={{minWidth:90}} />
+                    <th className="ds-header-cell" style={{textAlign:'center',fontWeight:500}} colSpan={12}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                        <span style={{color:'var(--dec_color_text_secondary)'}}>←</span> FY24 Q4
+                      </div>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th className="ds-header-cell" colSpan={2} style={{minWidth:90}} />
+                    <th className="ds-header-cell" style={{textAlign:'center',fontWeight:500}} colSpan={11}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                        <span style={{color:'var(--dec_color_text_secondary)'}}>←</span> Nov 2024
+                      </div>
+                    </th>
+                  </tr>
+                  <tr>
+                    {TIME_COLUMNS.map(col => (
+                      <th key={col} className="ds-header-cell" style={{textAlign:'right',whiteSpace:'nowrap',minWidth:90}}>
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((row, i) => (
+                    <tr key={row.id} style={{
+                      background: highlightedRows.includes(row.id) ? 'var(--dec_color_secondary_light)' :
+                        i % 2 === 0 ? 'var(--dec_color_surface_primary)' : 'var(--dec_color_grid_alt-row)'
+                    }}>
+                      {TIME_COLUMNS.map(col => {
+                        const alert = row.alerts[col];
+                        const val = cellValues[`${row.id}-${col}`] !== undefined ? cellValues[`${row.id}-${col}`] : row.values[col];
+                        const isHighlighted = highlightedRows.includes(row.id) && highlightedCols.includes(col);
+                        const isEditing = editingCell === `${row.id}-${col}`;
+                        const alertClass = alert ? getAlertClass(alert) : '';
+                        return (
+                          <td key={col}
+                            className={`ds-data-cell grid-cell ${alertClass} ${isHighlighted ? 'ai-glow' : ''}`}
+                            style={{
+                              minWidth:90, padding:0, cursor:'pointer', position:'relative',
+                              ...(alert ? {fontWeight:500} : {})
+                            }}
+                            onClick={(e) => onCellClick(row.id, col, alert, e)}>
+                            {isEditing ? (
+                              <input type="text" autoFocus
+                                style={{
+                                  width:'100%',height:'100%',
+                                  padding:'var(--core_sp_rem3) var(--dec_grid-cell_hzpadding)',
+                                  textAlign:'right',
+                                  fontSize:'var(--dec_text_size_label_md)',
+                                  fontFamily:'var(--core_typeface_switzer)',
+                                  background:'var(--dec_color_surface_primary)',
+                                  outline:'none',
+                                  border:'2px solid var(--dec_color_secondary_strong)',
+                                  borderRadius:0
+                                }}
+                                defaultValue={val ?? ''}
+                                onBlur={(e) => {
+                                  const newVal = e.target.value === '' || e.target.value === '-' ? null : parseInt(e.target.value.replace(/,/g,''));
+                                  setCellValues(p => ({...p, [`${row.id}-${col}`]: newVal}));
+                                  setEditingCell(null);
+                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingCell(null); }}
+                              />
+                            ) : (
+                              <div style={{
+                                padding:'var(--core_sp_rem3) var(--dec_grid-cell_hzpadding)',
+                                textAlign:'right',
+                                display:'flex',
+                                alignItems:'center',
+                                justifyContent:'flex-end',
+                                gap:4
+                              }}>
+                                <span>{formatNum(val)}</span>
+                                {alert && (
+                                  <span style={{
+                                    display:'inline-flex',
+                                    color: alert === 'critical' ? 'var(--dec_color_error_foreground)' :
+                                           alert === 'high' ? 'var(--dec_color_warning_foreground)' :
+                                           'var(--dec_color_info_foreground)'
+                                  }}>
+                                    <Icon name="flag" size={10} />
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── AI Assistant Panel ────────────────────────────────────────
+    const AIAssistantPanel = ({ open, onClose, suggestions, onApplySuggestion, onHighlight, activeSuggestion }) => {
+      const [chatMessages, setChatMessages] = useState([
+        { role: 'assistant', text: "Hi! I've analyzed your exception data and found **4 insights** that need attention. The most critical: EU Central revenue is at risk with a widening finance vs consensus gap. How can I help?" }
+      ]);
+      const [inputVal, setInputVal] = useState('');
+      const [isTyping, setIsTyping] = useState(false);
+      const chatEndRef = useRef(null);
+
+      useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [chatMessages]);
+
+      const handleSend = () => {
+        if (!inputVal.trim()) return;
+        const userMsg = inputVal.trim();
+        setChatMessages(p => [...p, { role: 'user', text: userMsg }]);
+        setInputVal('');
+        setIsTyping(true);
+
+        setTimeout(() => {
+          let response;
+          const lower = userMsg.toLowerCase();
+          if (lower.includes('fix') || lower.includes('resolve') || lower.includes('exception')) {
+            response = "I can help fix these exceptions. Based on pattern analysis:\n\n**Quick Fixes:**\n• Row 1 (11/04): Copy Finance Plan value → aligns with consensus\n• Row 4 (Nov): Increase forecast by 15% based on seasonal trend\n\n**Bulk Actions:**\n• Select \"Apply ML Correction\" to auto-fix 6 cells across 3 rows\n\nWant me to apply any of these?";
+          } else if (lower.includes('trend') || lower.includes('pattern') || lower.includes('forecast')) {
+            response = "**Trend Analysis — Last 8 Weeks:**\n\nDemand is trending **+12%** above plan for EU Central\nAPAC demand is **stabilizing** within 5% variance\nUS West showing **holiday pull-forward** pattern\n\nThe ML model predicts convergence by Week 50 if finance plans are adjusted by **+8-12%** for EU/US regions.";
+          } else if (lower.includes('risk') || lower.includes('impact') || lower.includes('revenue')) {
+            response = "**Revenue Impact Summary:**\n\n**Critical:** $14.5K gap in EU Central (Lenovo T14)\n**High:** $22K potential stockout risk (Thinkpad X1)\n**Medium:** $8.2K correction needed (Dell Latitude)\n\n**Total at-risk revenue: $44.7K**\n\nApplying all AI suggestions would reduce risk by ~78%.";
+          } else {
+            response = "I can help with:\n• **Fix exceptions** — auto-resolve or suggest corrections\n• **Trend analysis** — identify demand patterns\n• **Impact assessment** — quantify revenue at risk\n• **Root cause** — explain why exceptions occurred\n\nJust ask, or click an insight card to drill into it!";
+          }
+          setChatMessages(p => [...p, { role: 'assistant', text: response }]);
+          setIsTyping(false);
+        }, 1200);
+      };
+
+      if (!open) return null;
+
+      return (
+        <div className="slide-in" style={{
+          width:380,flexShrink:0,
+          borderLeft:'1px solid var(--dec_color_grid-cell_border)',
+          display:'flex',flexDirection:'column',
+          background:'var(--dec_color_surface_primary)'
+        }}>
+          {/* Header */}
+          <div style={{padding:16,borderBottom:'1px solid var(--dec_color_grid-cell_border)',background:'linear-gradient(135deg, rgba(107,47,160,0.04), rgba(185,172,232,0.08))'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <div style={{
+                  width:28,height:28,
+                  background:'linear-gradient(135deg, var(--dec_color_secondary_strong), var(--dec_color_switch_selected))',
+                  borderRadius:'var(--dec_base_crn)',
+                  display:'flex',alignItems:'center',justifyContent:'center'
+                }}>
+                  <Icon name="sparkles" size={14} className="" style={{color:'#fff'}} />
+                </div>
+                <div>
+                  <div style={{fontSize:'var(--dec_text_size_label_md)',fontWeight:600,color:'var(--dec_color_text_label)'}}>AI Planning Assistant</div>
+                  <div style={{fontSize:10,color:'var(--dec_color_text_secondary)'}}>Powered by e2open Intelligence</div>
+                </div>
+              </div>
+              <button onClick={onClose} style={{padding:4,background:'none',border:'none',cursor:'pointer',color:'var(--dec_color_text_secondary)',borderRadius:'var(--dec_base_crn)'}}>
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+            {/* Exception summary badges */}
+            <div style={{display:'flex',gap:8,marginTop:8}}>
+              {[
+                { label: 'Critical', count: 3, color: 'var(--dec_color_error_foreground)' },
+                { label: 'High', count: 4, color: 'var(--dec_color_warning_foreground)' },
+                { label: 'Medium', count: 3, color: 'var(--dec_color_info_foreground)' },
+                { label: 'Low', count: 2, color: '#854d0e' }
+              ].map(s => (
+                <div key={s.label} style={{
+                  display:'flex',alignItems:'center',gap:4,
+                  background:'var(--dec_color_surface_primary)',
+                  borderRadius:'var(--dec_base_crn)',
+                  padding:'4px 8px',
+                  border:'1px solid var(--dec_color_grid-cell_border)',
+                  fontSize:10
+                }}>
+                  <div style={{width:6,height:6,borderRadius:'50%',background:s.color}} />
+                  <span style={{color:'var(--dec_color_text_secondary)'}}>{s.count} {s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Insights Cards */}
+          <div className="scrollbar-thin" style={{padding:12,borderBottom:'1px solid var(--dec_color_grid-cell_border)',maxHeight:240,overflowY:'auto'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <span style={{fontSize:11,fontWeight:600,color:'var(--dec_color_text_label)'}}>AI Insights</span>
+              <span style={{fontSize:10,color:'var(--dec_color_secondary_strong)',cursor:'pointer'}}>View all</span>
+            </div>
+            {suggestions.map(s => {
+              const alertColors = {
+                critical: { bg: 'var(--dec_color_error_subtle)', text: 'var(--dec_color_error_foreground)' },
+                high: { bg: 'var(--dec_color_warning_subtle)', text: 'var(--dec_color_warning_foreground)' },
+                medium: { bg: 'var(--dec_color_info_subtle)', text: 'var(--dec_color_info_foreground)' },
+                low: { bg: '#fefce8', text: '#854d0e' }
+              };
+              const c = alertColors[s.type];
+              return (
+                <div key={s.id}
+                  style={{
+                    marginBottom:8, padding:10,
+                    borderRadius:'var(--dec_base_crn)',
+                    border: activeSuggestion === s.id ? '1px solid var(--dec_color_secondary_strong)' : '1px solid var(--dec_color_grid-cell_border)',
+                    background: activeSuggestion === s.id ? 'var(--dec_color_secondary_light)' : 'var(--dec_color_surface_primary)',
+                    cursor:'pointer',
+                    transition:'all 0.15s'
+                  }}
+                  onMouseEnter={() => onHighlight(s.affectedRows, s.affectedCols)}
+                  onMouseLeave={() => onHighlight([], [])}>
+                  <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                    <div style={{
+                      width:20,height:20,borderRadius:'var(--core_sp_rem)',
+                      background:c.bg,color:c.text,
+                      display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:2
+                    }}>
+                      <Icon name={s.type === 'critical' ? 'alertTriangle' : s.type === 'high' ? 'trendingUp' : s.type === 'medium' ? 'target' : 'lightbulb'} size={11} />
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        <span className="ds-pill" style={{
+                          fontSize:9,padding:'1px 6px',
+                          background:c.bg, borderColor:c.bg, color:c.text
+                        }}>{s.type.toUpperCase()}</span>
+                        <span style={{fontSize:11,fontWeight:600,color:'var(--dec_color_text_label)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.title}</span>
+                      </div>
+                      <p style={{fontSize:10,color:'var(--dec_color_text_secondary)',marginTop:4,lineHeight:'14px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{s.description}</p>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:8}}>
+                        <button className="ds-btn ds-btn-primary" onClick={(e) => { e.stopPropagation(); onApplySuggestion(s); }}
+                          style={{fontSize:9,padding:'2px 8px',display:'flex',alignItems:'center',gap:4}}>
+                          <Icon name="zap" size={9} />
+                          {s.action}
+                        </button>
+                        <span style={{fontSize:9,color:'#1b5e20',fontWeight:500,display:'flex',alignItems:'center',gap:2}}>
+                          <Icon name="trendingUp" size={9} />
+                          {s.impact}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Chat */}
+          <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0}}>
+            <div className="scrollbar-thin" style={{flex:1,overflowY:'auto',padding:12}}>
+              {chatMessages.map((msg, i) => (
+                <div key={i} className="fade-in" style={{display:'flex',justifyContent:msg.role === 'user' ? 'flex-end' : 'flex-start',marginBottom:12}}>
+                  <div style={{
+                    maxWidth:'90%',
+                    borderRadius:'var(--dec_base_crn)',
+                    padding:'8px 12px',
+                    fontSize:11,lineHeight:'16px',
+                    ...(msg.role === 'user'
+                      ? {background:'var(--dec_color_secondary_strong)',color:'#fff',borderBottomRightRadius:0}
+                      : {background:'var(--dec_color_surface_secondary)',color:'var(--dec_color_text_label)',border:'1px solid var(--dec_color_grid-cell_border)',borderBottomLeftRadius:0})
+                  }}>
+                    {msg.text.split('\n').map((line, j) => (
+                      <p key={j} style={{margin: j > 0 ? '4px 0 0' : 0}}>
+                        {line.split('**').map((part, k) => k % 2 === 1 ? <strong key={k}>{part}</strong> : part)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div style={{display:'flex',justifyContent:'flex-start'}}>
+                  <div style={{background:'var(--dec_color_surface_secondary)',border:'1px solid var(--dec_color_grid-cell_border)',borderRadius:'var(--dec_base_crn)',padding:'8px 12px',borderBottomLeftRadius:0}}>
+                    <div style={{display:'flex',gap:4}}>
+                      <div className="ai-pulse" style={{width:6,height:6,background:'var(--dec_color_text_secondary)',borderRadius:'50%',animationDelay:'0ms'}} />
+                      <div className="ai-pulse" style={{width:6,height:6,background:'var(--dec_color_text_secondary)',borderRadius:'50%',animationDelay:'300ms'}} />
+                      <div className="ai-pulse" style={{width:6,height:6,background:'var(--dec_color_text_secondary)',borderRadius:'50%',animationDelay:'600ms'}} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            {/* Quick actions */}
+            <div style={{padding:'0 12px 4px'}}>
+              <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                {['Fix all exceptions','Show trends','Revenue impact','Root cause'].map(q => (
+                  <button key={q} onClick={() => {
+                    setChatMessages(p => [...p, {role:'user',text:q}]);
+                    setIsTyping(true);
+                    setTimeout(() => { setIsTyping(false); setChatMessages(p => [...p, {role:'assistant',text:`Analyzing "${q}"... Let me look at the data.`}]); }, 1000);
+                  }}
+                    className="ds-pill" style={{fontSize:9,padding:'2px 8px',background:'var(--dec_color_surface_secondary)',borderColor:'var(--dec_color_grid-cell_border)',color:'var(--dec_color_text_secondary)'}}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Input */}
+            <div style={{padding:12,borderTop:'1px solid var(--dec_color_grid-cell_border)'}}>
+              <div style={{
+                display:'flex',alignItems:'center',gap:8,
+                background:'var(--dec_color_surface_secondary)',
+                borderRadius:'var(--dec_base_crn)',
+                border:'1px solid var(--dec_color_grid-cell_border)',
+                padding:'6px 12px'
+              }}>
+                <input type="text" placeholder="Ask about exceptions, trends, or actions..."
+                  style={{
+                    flex:1,background:'transparent',
+                    fontSize:11,outline:'none',border:'none',
+                    fontFamily:'var(--core_typeface_switzer)',
+                    color:'var(--dec_color_text_label)'
+                  }}
+                  value={inputVal} onChange={e => setInputVal(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSend(); }} />
+                <button onClick={handleSend} style={{background:'none',border:'none',cursor:'pointer',color:'var(--dec_color_secondary_strong)'}}>
+                  <Icon name="send" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── AI Notification Banner ────────────────────────────────────
+    const AIBanner = ({ show, onDismiss, onOpen }) => {
+      if (!show) return null;
+      return (
+        <div className="fade-in" style={{
+          margin:'4px 20px',
+          background:'linear-gradient(135deg, rgba(107,47,160,0.04), rgba(185,172,232,0.06), rgba(228,218,239,0.08))',
+          border:'1px solid rgba(107,47,160,0.12)',
+          borderRadius:'var(--dec_base_crn)',
+          padding:'8px 16px',
+          display:'flex',alignItems:'center',justifyContent:'space-between'
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div style={{
+              width:32,height:32,
+              background:'linear-gradient(135deg, var(--dec_color_secondary_strong), var(--dec_color_switch_selected))',
+              borderRadius:'var(--dec_base_crn)',
+              display:'flex',alignItems:'center',justifyContent:'center'
+            }}>
+              <Icon name="sparkles" size={15} className="" style={{color:'#fff'}} />
+            </div>
+            <div>
+              <p style={{fontSize:'var(--dec_text_size_label_sm)',fontWeight:600,color:'var(--dec_color_text_label)'}}>
+                AI found 4 exception insights with <span style={{color:'var(--dec_color_secondary_strong)'}}>$44.7K</span> revenue at risk
+              </p>
+              <p style={{fontSize:10,color:'var(--dec_color_text_secondary)',marginTop:2}}>3 critical, 4 high severity — 6 cells can be auto-corrected by ML models</p>
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <button className="ds-btn ds-btn-primary" onClick={onOpen}
+              style={{display:'flex',alignItems:'center',gap:4,fontSize:'var(--dec_text_size_label_sm)',padding:'6px 12px'}}>
+              <Icon name="zap" size={12} />
+              Review & Fix
+            </button>
+            <button onClick={onDismiss} style={{padding:4,background:'none',border:'none',cursor:'pointer',color:'var(--dec_color_text_secondary)'}}>
+              <Icon name="x" size={14} />
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── AI Cell Tooltip ───────────────────────────────────────────
+    const AICellTooltip = ({ show, position, cellInfo, onFix, onDismiss }) => {
+      if (!show) return null;
+      const alertColors = {
+        critical: { bg: 'var(--dec_color_error_subtle)', text: 'var(--dec_color_error_foreground)' },
+        high: { bg: 'var(--dec_color_warning_subtle)', text: 'var(--dec_color_warning_foreground)' },
+        medium: { bg: 'var(--dec_color_info_subtle)', text: 'var(--dec_color_info_foreground)' },
+        low: { bg: '#fefce8', text: '#854d0e' }
+      };
+      const c = alertColors[cellInfo.alert] || alertColors.medium;
+      return (
+        <div className="fade-in" style={{
+          position:'fixed', zIndex:50,
+          background:'var(--dec_color_surface_primary)',
+          borderRadius:'var(--dec_base_crn)',
+          boxShadow:'0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
+          border:'1px solid var(--dec_color_grid-cell_border)',
+          padding:12, width:280,
+          top: position.y + 10,
+          left: Math.min(position.x, window.innerWidth - 300)
+        }}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+            <div style={{
+              width:24,height:24,borderRadius:'var(--dec_base_crn)',
+              background:c.bg,color:c.text,
+              display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
+            }}>
+              <Icon name="sparkles" size={13} />
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:'var(--dec_text_size_label_sm)',fontWeight:600,color:'var(--dec_color_text_label)'}}>AI Analysis</div>
+              <p style={{fontSize:10,color:'var(--dec_color_text_secondary)',marginTop:4,lineHeight:'14px'}}>{cellInfo.insight}</p>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginTop:8}}>
+                <button className="ds-btn ds-btn-primary" onClick={onFix}
+                  style={{fontSize:10,padding:'4px 8px',display:'flex',alignItems:'center',gap:4}}>
+                  <Icon name="zap" size={10} />
+                  {cellInfo.fixLabel}
+                </button>
+                <button onClick={onDismiss} style={{fontSize:10,color:'var(--dec_color_text_secondary)',background:'none',border:'none',cursor:'pointer'}}>Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── Main App ──────────────────────────────────────────────────
+    const App = () => {
+      const [activeThreshold, setActiveThreshold] = useState('All Thresholds');
+      const [aiPanelOpen, setAiPanelOpen] = useState(false);
+      const [showBanner, setShowBanner] = useState(true);
+      const [chartExpanded, setChartExpanded] = useState(false);
+      const [toggles, setToggles] = useState({ 'Expand hierarchy': true, 'Expand years': true, 'Expand Quarters': true, 'Expand Months': true });
+      const [highlightedRows, setHighlightedRows] = useState([]);
+      const [highlightedCols, setHighlightedCols] = useState([]);
+      const [activeSuggestion, setActiveSuggestion] = useState(null);
+      const [editingCell, setEditingCell] = useState(null);
+      const [cellValues, setCellValues] = useState({});
+      const [tooltip, setTooltip] = useState({ show: false, position: {x:0,y:0}, cellInfo: {} });
+      const [toast, setToast] = useState(null);
+
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      const handleCellClick = useCallback((rowId, col, alert, e) => {
+        if (alert) {
+          const insights = {
+            critical: { insight: 'This cell has a critical variance. The gap between finance and consensus has grown 34% in 3 weeks, driven by demand surge. ML model suggests aligning to consensus value.', fixLabel: 'Auto-align value' },
+            high: { insight: 'High variance detected. Demand signals are trending above plan due to seasonal pull-forward. Historical data suggests a 15% forecast adjustment.', fixLabel: 'Adjust +15%' },
+            medium: { insight: 'Moderate variance. Finance plan is consistently 18-25% below consensus. Statistical correction available with 85% confidence.', fixLabel: 'Apply correction' },
+            low: { insight: 'Low-level variance within acceptable range but trending. Consider pre-emptive adjustment to prevent escalation next period.', fixLabel: 'Pre-emptive fix' }
+          };
+          setTooltip({
+            show: true,
+            position: { x: e.clientX, y: e.clientY },
+            cellInfo: { ...insights[alert], alert, rowId, col }
+          });
+        } else {
+          setTooltip({ show: false, position: {x:0,y:0}, cellInfo: {} });
+          setEditingCell(`${rowId}-${col}`);
+        }
+      }, []);
+
+      const handleApplySuggestion = useCallback((suggestion) => {
+        const newValues = { ...cellValues };
+        suggestion.affectedRows.forEach(rowId => {
+          suggestion.affectedCols.forEach(col => {
+            const row = GRID_DATA.find(r => r.id === rowId);
+            if (row && row.values[col] !== undefined) {
+              const currentVal = newValues[`${rowId}-${col}`] !== undefined ? newValues[`${rowId}-${col}`] : row.values[col];
+              if (currentVal !== null) {
+                newValues[`${rowId}-${col}`] = Math.round(currentVal * (suggestion.type === 'critical' ? 0.6 : suggestion.type === 'high' ? 1.15 : suggestion.type === 'medium' ? 1.12 : 0.92));
+              }
+            }
+          });
+        });
+        setCellValues(newValues);
+        setActiveSuggestion(suggestion.id);
+        showToast(`Applied "${suggestion.action}" — ${suggestion.impact}`);
+        setTimeout(() => setActiveSuggestion(null), 2000);
+      }, [cellValues]);
+
+      const handleHighlight = useCallback((rows, cols) => {
+        setHighlightedRows(rows);
+        setHighlightedCols(cols);
+      }, []);
+
+      return (
+        <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'var(--dec_color_surface_primary)',overflow:'hidden'}}>
+          <AppHeader />
+          <VersionSwitcher />
+          <PageTitle />
+          <Toolbar activeThreshold={activeThreshold} setActiveThreshold={setActiveThreshold} onAIToggle={() => { setAiPanelOpen(!aiPanelOpen); setShowBanner(false); }} aiPanelOpen={aiPanelOpen} />
+          <QuickFilters toggles={toggles} setToggles={setToggles} />
+          <AIBanner show={showBanner && !aiPanelOpen} onDismiss={() => setShowBanner(false)} onOpen={() => { setAiPanelOpen(true); setShowBanner(false); }} />
+          <ChartFilterBar expanded={chartExpanded} setExpanded={setChartExpanded} />
+
+          <div style={{flex:1,display:'flex',minHeight:0}}>
+            <DataGrid data={GRID_DATA} activeThreshold={activeThreshold} highlightedRows={highlightedRows} highlightedCols={highlightedCols} onCellClick={handleCellClick} editingCell={editingCell} setEditingCell={setEditingCell} cellValues={cellValues} setCellValues={setCellValues} />
+            <AIAssistantPanel open={aiPanelOpen} onClose={() => setAiPanelOpen(false)} suggestions={AI_SUGGESTIONS} onApplySuggestion={handleApplySuggestion} onHighlight={handleHighlight} activeSuggestion={activeSuggestion} />
+          </div>
+
+          <AICellTooltip show={tooltip.show} position={tooltip.position} cellInfo={tooltip.cellInfo}
+            onFix={() => {
+              const { rowId, col, alert } = tooltip.cellInfo;
+              const row = GRID_DATA.find(r => r.id === rowId);
+              if (row) {
+                const current = cellValues[`${rowId}-${col}`] !== undefined ? cellValues[`${rowId}-${col}`] : row.values[col];
+                if (current !== null) {
+                  const factor = alert === 'critical' ? 0.6 : alert === 'high' ? 1.15 : alert === 'medium' ? 1.12 : 0.92;
+                  setCellValues(p => ({...p, [`${rowId}-${col}`]: Math.round(current * factor)}));
+                  showToast(`Cell corrected using AI analysis`);
+                }
+              }
+              setTooltip({ show: false, position:{x:0,y:0}, cellInfo:{} });
+            }}
+            onDismiss={() => setTooltip({ show: false, position:{x:0,y:0}, cellInfo:{} })} />
+
+          {toast && (
+            <div className="fade-in" style={{position:'fixed',bottom:24,right:24,zIndex:50}}>
+              <div style={{
+                display:'flex',alignItems:'center',gap:8,
+                padding:'10px 16px',
+                borderRadius:'var(--dec_base_crn)',
+                boxShadow:'0 4px 16px rgba(0,0,0,0.12)',
+                border:'1px solid var(--dec_color_grid-cell_border)',
+                background: toast.type === 'success' ? 'var(--dec_color_success_subtle)' : 'var(--dec_color_secondary_light)',
+                color: toast.type === 'success' ? 'var(--dec_color_success_foreground)' : 'var(--dec_color_secondary_strong)',
+                fontSize:'var(--dec_text_size_label_sm)',fontWeight:500
+              }}>
+                <Icon name={toast.type === 'success' ? 'check' : 'sparkles'} size={14} />
+                <span>{toast.message}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S&OP Exception Planning - Capacity Planning Overview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            e2open: { primary: '#6B2FA0', light: '#F5F0FA', accent: '#8B5CF6', dark: '#1E1B4B' },
+            grid: { header: '#F8F7FA', border: '#E5E2EB', hover: '#F3F0FF' },
+            alert: { critical: '#DC2626', high: '#EA580C', medium: '#D97706', low: '#CA8A04' },
+            threshold: {
+              critical: { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA' },
+              high: { bg: '#FFF7ED', text: '#9A3412', border: '#FED7AA' },
+              medium: { bg: '#FFFBEB', text: '#92400E', border: '#FDE68A' },
+              low: { bg: '#FEFCE8', text: '#854D0E', border: '#FDE047' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    body { margin: 0; background: #fff; }
+    .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .ai-pulse { animation: pulse 2s ease-in-out infinite; }
+    .ai-glow { box-shadow: 0 0 0 2px rgba(139,92,246,0.3), 0 0 12px rgba(139,92,246,0.15); }
+    .cell-editable:focus-within { box-shadow: inset 0 0 0 2px #8B5CF6; background: #FEFBFF; }
+    .grid-cell { transition: background 0.15s; }
+    .grid-cell:hover { background: #F9F7FC; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, useRef, useMemo } = React;
+
+    // ─── Data & Constants ───────────────────────────────────────────
+    const GRID_DATA = [
+      { id: 1, product: 'Lenovo Thinkpad T14', customer: 'Amazon Retail', dc: 'EU Central', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 14567, 'FY24 Q4': 12345, 'Nov 2024': 18901, '10/28/2024': 16789, '11/04/2024': 6002, '11/11/2024': null, '11/18/2024': 2934, '11/25/2024': 3201, '12/02/2024': 4512, '12/09/2024': 3890, '12/16/2024': 2100, '12/23/2024': 1800, '12/30/2024': 950 },
+        alerts: { 'FY 2024': 'critical', 'FY24 Q4': 'critical', 'Nov 2024': 'high', '10/28/2024': 'high', '11/04/2024': 'critical', '11/18/2024': 'medium' }
+      },
+      { id: 2, product: 'Lenovo Thinkpad T14', customer: 'Amazon Retail', dc: 'EU Central', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 9101, 'FY24 Q4': 5678, 'Nov 2024': 3456, '10/28/2024': 4567, '11/04/2024': null, '11/11/2024': null, '11/18/2024': null, '11/25/2024': 5600, '12/02/2024': 4800, '12/09/2024': 3200, '12/16/2024': 2900, '12/23/2024': 2100, '12/30/2024': 1050 },
+        alerts: {}
+      },
+      { id: 3, product: 'Lenovo Thinkpad T14', customer: 'Amazon Retail', dc: 'EU Central', timeSeries: 'Consensus Demand Plan (Cost)',
+        values: { 'FY 2024': 120529, 'FY24 Q4': 120203, 'Nov 2024': 120123, '10/28/2024': 110529, '11/04/2024': 110539, '11/11/2024': 120239, '11/18/2024': 120529, '11/25/2024': 118900, '12/02/2024': 115600, '12/09/2024': 112300, '12/16/2024': 109800, '12/23/2024': 107500, '12/30/2024': 105200 },
+        alerts: {}
+      },
+      { id: 4, product: 'Lenovo Thinkpad X1', customer: 'Best Buy', dc: 'US West', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 22340, 'FY24 Q4': 18560, 'Nov 2024': 15230, '10/28/2024': 12890, '11/04/2024': 8900, '11/11/2024': 4500, '11/18/2024': 3200, '11/25/2024': 6700, '12/02/2024': 5400, '12/09/2024': 4100, '12/16/2024': 3300, '12/23/2024': 2800, '12/30/2024': 1500 },
+        alerts: { 'FY 2024': 'high', 'FY24 Q4': 'high', 'Nov 2024': 'medium', '10/28/2024': 'medium', '11/04/2024': 'critical' }
+      },
+      { id: 5, product: 'Lenovo Thinkpad X1', customer: 'Best Buy', dc: 'US West', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 15200, 'FY24 Q4': 11800, 'Nov 2024': 9400, '10/28/2024': 7800, '11/04/2024': 6200, '11/11/2024': 5100, '11/18/2024': 4300, '11/25/2024': 7200, '12/02/2024': 6100, '12/09/2024': 4900, '12/16/2024': 3800, '12/23/2024': 3100, '12/30/2024': 1700 },
+        alerts: {}
+      },
+      { id: 6, product: 'Lenovo Thinkpad X1', customer: 'Best Buy', dc: 'US West', timeSeries: 'Consensus Demand Plan (Cost)',
+        values: { 'FY 2024': 98500, 'FY24 Q4': 85200, 'Nov 2024': 72100, '10/28/2024': 65400, '11/04/2024': 58900, '11/11/2024': 52300, '11/18/2024': 48700, '11/25/2024': 78900, '12/02/2024': 71200, '12/09/2024': 65400, '12/16/2024': 59800, '12/23/2024': 54100, '12/30/2024': 48500 },
+        alerts: {}
+      },
+      { id: 7, product: 'Dell Latitude 5540', customer: 'Walmart', dc: 'US East', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 31200, 'FY24 Q4': 25800, 'Nov 2024': 21400, '10/28/2024': 18900, '11/04/2024': 15200, '11/11/2024': 11800, '11/18/2024': 8400, '11/25/2024': 9200, '12/02/2024': 7800, '12/09/2024': 6500, '12/16/2024': 5200, '12/23/2024': 4100, '12/30/2024': 2800 },
+        alerts: { 'FY 2024': 'critical', 'FY24 Q4': 'high', 'Nov 2024': 'high', '10/28/2024': 'medium', '11/04/2024': 'high', '11/11/2024': 'medium' }
+      },
+      { id: 8, product: 'Dell Latitude 5540', customer: 'Walmart', dc: 'US East', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 18900, 'FY24 Q4': 14200, 'Nov 2024': 11600, '10/28/2024': 9800, '11/04/2024': 7500, '11/11/2024': 6200, '11/18/2024': 5100, '11/25/2024': 8400, '12/02/2024': 7100, '12/09/2024': 5900, '12/16/2024': 4800, '12/23/2024': 3900, '12/30/2024': 2400 },
+        alerts: {}
+      },
+      { id: 9, product: 'HP ProBook 450', customer: 'CDW Corp', dc: 'APAC', timeSeries: 'Finance Vs Consensus (Cost)',
+        values: { 'FY 2024': 8900, 'FY24 Q4': 6700, 'Nov 2024': 5200, '10/28/2024': 4100, '11/04/2024': 3200, '11/11/2024': 2400, '11/18/2024': 1800, '11/25/2024': 4500, '12/02/2024': 3800, '12/09/2024': 3100, '12/16/2024': 2500, '12/23/2024': 1900, '12/30/2024': 1200 },
+        alerts: { 'FY 2024': 'medium', 'FY24 Q4': 'low', 'Nov 2024': 'low' }
+      },
+      { id: 10, product: 'HP ProBook 450', customer: 'CDW Corp', dc: 'APAC', timeSeries: 'Finance Plan (Cost)',
+        values: { 'FY 2024': 7200, 'FY24 Q4': 5400, 'Nov 2024': 4100, '10/28/2024': 3300, '11/04/2024': 2600, '11/11/2024': 2100, '11/18/2024': 1600, '11/25/2024': 4100, '12/02/2024': 3500, '12/09/2024': 2800, '12/16/2024': 2200, '12/23/2024': 1700, '12/30/2024': 1100 },
+        alerts: {}
+      },
+      { id: 11, product: 'HP ProBook 450', customer: 'CDW Corp', dc: 'APAC', timeSeries: 'Consensus Demand Plan (Cost)',
+        values: { 'FY 2024': 45600, 'FY24 Q4': 38900, 'Nov 2024': 32100, '10/28/2024': 28700, '11/04/2024': 25400, '11/11/2024': 22100, '11/18/2024': 19800, '11/25/2024': 35600, '12/02/2024': 31200, '12/09/2024': 27800, '12/16/2024': 24500, '12/23/2024': 21200, '12/30/2024': 18900 },
+        alerts: {}
+      }
+    ];
+
+    const TIME_COLUMNS = ['FY 2024','FY24 Q4','Nov 2024','10/28/2024','11/04/2024','11/11/2024','11/18/2024','11/25/2024','12/02/2024','12/09/2024','12/16/2024','12/23/2024','12/30/2024'];
+    const FROZEN_COLS = ['#','Product Description','Customer Desc','DC Description','Time Series'];
+
+    const AI_SUGGESTIONS = [
+      { id: 1, type: 'critical', title: 'Revenue at Risk — EU Central', description: 'Finance vs Consensus gap for Lenovo T14 at Amazon Retail has widened 34% over 3 weeks. The 11/04 period shows a $6,002 variance with no finance plan coverage. Recommend immediate alignment meeting with Finance.', action: 'Auto-align Finance Plan', impact: 'Close $14.5K gap', affectedRows: [1, 2], affectedCols: ['11/04/2024', '11/11/2024'] },
+      { id: 2, type: 'high', title: 'Demand Spike Detected — US West', description: 'Best Buy orders for Thinkpad X1 trending 42% above forecast for Nov 2024. Historical pattern suggests holiday pull-forward. Consider reallocating inventory from APAC.', action: 'Adjust Forecast +15%', impact: 'Prevent $22K stockout', affectedRows: [4, 5], affectedCols: ['Nov 2024', '10/28/2024'] },
+      { id: 3, type: 'medium', title: 'Consensus Gap Widening — US East', description: 'Dell Latitude 5540 finance plan consistently undershoots consensus by 18-25%. Statistical models suggest convergence if finance plan is increased by 12%.', action: 'Apply ML Correction', impact: 'Reduce variance 60%', affectedRows: [7, 8], affectedCols: ['FY 2024', 'FY24 Q4'] },
+      { id: 4, type: 'low', title: 'Optimization Opportunity — APAC', description: 'HP ProBook 450 shows stable demand trajectory with low variance. Can reduce safety stock by 8% and redeploy capital to higher-exception products.', action: 'Optimize Stock', impact: 'Free up $18K capital', affectedRows: [9, 10, 11], affectedCols: ['FY 2024'] }
+    ];
+
+    // ─── Icons (inline SVG) ────────────────────────────────────────
+    const Icon = ({ name, size = 16, className = '' }) => {
+      const icons = {
+        search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+        chevronDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+        chevronRight: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+        star: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+        filter: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+        refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
+        save: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>,
+        download: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+        maximize: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>,
+        settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+        sparkles: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>,
+        bot: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>,
+        alertTriangle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>,
+        trendingUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+        trendingDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>,
+        check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
+        x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+        send: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>,
+        zap: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>,
+        monitor: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>,
+        columns: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>,
+        moreVertical: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
+        bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+        arrowUpDown: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>,
+        lightbulb: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
+        clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+        target: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+      };
+      return <span className={className}>{icons[name]}</span>;
+    };
+
+    // ─── Version Switcher ──────────────────────────────────────────
+    const VersionSwitcher = () => {
+      const versions = [
+        { id: 'v1', label: 'Version 1 — Base Prototype', file: 'index.html', active: true },
+        { id: 'v2', label: 'Version 2 — Modern Harmony DS', file: 'version-2.html' },
+      ];
+      return (
+        <div className="bg-gray-100 border-b border-gray-200 flex items-end px-5 pt-1 gap-1">
+          {versions.map(v => (
+            <button key={v.id}
+              className={`px-4 py-1.5 text-xs font-medium rounded-t-lg transition-all ${v.active ? 'bg-white text-e2open-primary font-semibold shadow-[inset_0_-2px_0_0_#6B2FA0]' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
+              onClick={() => { if (!v.active) window.location.href = v.file; }}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      );
+    };
+
+    // ─── App Header ────────────────────────────────────────────────
+    const AppHeader = () => (
+      <header className="h-14 bg-white border-b border-gray-200 flex items-center px-5 justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-e2open-primary rounded-md flex items-center justify-center">
+              <span className="text-white text-xs font-bold">e2</span>
+            </div>
+            <span className="font-semibold text-gray-900 text-sm">e2open</span>
+          </div>
+          <div className="flex items-center text-xs text-gray-500 gap-1">
+            <span>Sales & Operation Planning</span>
+            <Icon name="chevronDown" size={12} />
+            <span className="text-gray-300">/</span>
+            <span>Exception Dashboard</span>
+            <Icon name="chevronDown" size={12} />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input type="text" placeholder="What are you looking for?" className="border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 text-xs w-52 focus:outline-none focus:ring-2 focus:ring-e2open-primary/30 focus:border-e2open-primary" />
+            <Icon name="search" size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+          <button className="flex items-center gap-1.5 bg-e2open-primary text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-e2open-primary/90 transition-colors">
+            <Icon name="sparkles" size={14} />
+            Assistant
+          </button>
+          <div className="flex items-center gap-2 ml-1">
+            <Icon name="bell" size={16} className="text-gray-500 cursor-pointer hover:text-gray-700" />
+            <div className="text-right mr-2">
+              <div className="text-xs font-semibold text-gray-800">Adam Smith</div>
+              <div className="text-[10px] text-gray-500">Demand Planner</div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-e2open-primary/20 flex items-center justify-center text-e2open-primary text-xs font-semibold">AS</div>
+          </div>
+        </div>
+      </header>
+    );
+
+    // ─── Page Title ────────────────────────────────────────────────
+    const PageTitle = () => (
+      <div className="flex items-center gap-2 px-5 pt-2">
+        <span className="text-sm text-gray-500">Exception Dashboard</span>
+        <span className="text-gray-300">›</span>
+        <h1 className="text-lg font-semibold text-gray-900">Capacity Planning Overview</h1>
+        <Icon name="star" size={16} className="text-gray-400 hover:text-yellow-400 cursor-pointer" />
+      </div>
+    );
+
+    // ─── Toolbar ───────────────────────────────────────────────────
+    const Toolbar = ({ activeThreshold, setActiveThreshold, onAIToggle, aiPanelOpen }) => (
+      <div className="flex items-center justify-between px-5 py-1.5 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">Submit</button>
+          <button className="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">Reset</button>
+          <button className="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors">Cancel</button>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Threshold pills */}
+          <div className="flex items-center gap-1 mr-2">
+            {['All Thresholds','Critical','High','Medium','Low'].map(t => (
+              <button key={t} onClick={() => setActiveThreshold(t)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${activeThreshold === t
+                  ? 'bg-e2open-primary text-white shadow-sm'
+                  : t === 'Critical' ? 'bg-threshold-critical-bg text-threshold-critical-text border border-threshold-critical-border hover:opacity-80'
+                  : t === 'High' ? 'bg-threshold-high-bg text-threshold-high-text border border-threshold-high-border hover:opacity-80'
+                  : t === 'Medium' ? 'bg-threshold-medium-bg text-threshold-medium-text border border-threshold-medium-border hover:opacity-80'
+                  : t === 'Low' ? 'bg-threshold-low-bg text-threshold-low-text border border-threshold-low-border hover:opacity-80'
+                  : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'}`}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="h-4 w-px bg-gray-200 mx-1" />
+          {/* AI Assistant toggle */}
+          <button onClick={onAIToggle}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all ${aiPanelOpen ? 'bg-e2open-primary text-white shadow-md' : 'bg-e2open-light text-e2open-primary border border-e2open-primary/20 hover:bg-e2open-primary/10'}`}>
+            <Icon name="sparkles" size={13} />
+            AI Insights
+          </button>
+          <div className="h-4 w-px bg-gray-200 mx-1" />
+          {[{icon:'save',tip:'Save'},{icon:'monitor',tip:'Dashboard'},{icon:'maximize',tip:'Fullscreen'},{icon:'refresh',tip:'Refresh'},{icon:'columns',tip:'Columns'},{icon:'download',tip:'Export'},{icon:'settings',tip:'Settings'},{icon:'moreVertical',tip:'More'}].map(b => (
+            <button key={b.icon} title={b.tip} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+              <Icon name={b.icon} size={15} />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+
+    // ─── Quick Filters ─────────────────────────────────────────────
+    const QuickFilters = ({ toggles, setToggles }) => {
+      const totalItems = GRID_DATA.length;
+      return (
+        <div className="flex items-center justify-between px-5 py-1.5 bg-gray-50/50 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            {Object.entries(toggles).map(([key, val]) => (
+              <label key={key} className="flex items-center gap-1.5 cursor-pointer group">
+                <div onClick={() => setToggles(p => ({...p, [key]: !p[key]}))}
+                  className={`w-8 h-[18px] rounded-full flex items-center transition-all cursor-pointer ${val ? 'bg-e2open-primary justify-end' : 'bg-gray-300 justify-start'}`}>
+                  <div className={`w-3.5 h-3.5 rounded-full bg-white shadow mx-0.5 transition-all`} />
+                </div>
+                <span className="text-[11px] text-gray-600 group-hover:text-gray-900">{key}</span>
+              </label>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-gray-500">Displaying {totalItems} of {totalItems} item(s)</span>
+            <button className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+              <Icon name="refresh" size={14} />
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── Chart Filters (collapsible) ───────────────────────────────
+    const ChartFilterBar = ({ expanded, setExpanded }) => (
+      <div className="border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-1.5 cursor-pointer hover:bg-gray-50/50" onClick={() => setExpanded(!expanded)}>
+          <div className="flex items-center gap-2">
+            <Icon name={expanded ? 'chevronDown' : 'chevronRight'} size={16} className="text-gray-400" />
+            <span className="text-xs font-medium text-gray-700">Chart view</span>
+          </div>
+          <button className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100" onClick={e => e.stopPropagation()}>
+            <Icon name="filter" size={13} />
+          </button>
+        </div>
+      </div>
+    );
+
+    // ─── Alert Badge ───────────────────────────────────────────────
+    const getAlertStyles = (level) => {
+      switch(level) {
+        case 'critical': return 'bg-red-50 text-red-700 border-l-2 border-l-red-500';
+        case 'high': return 'bg-orange-50 text-orange-700 border-l-2 border-l-orange-500';
+        case 'medium': return 'bg-amber-50 text-amber-700 border-l-2 border-l-amber-400';
+        case 'low': return 'bg-yellow-50 text-yellow-700 border-l-2 border-l-yellow-300';
+        default: return '';
+      }
+    };
+
+    // ─── Data Grid ─────────────────────────────────────────────────
+    const DataGrid = ({ data, activeThreshold, highlightedRows, highlightedCols, onCellClick, editingCell, setEditingCell, cellValues, setCellValues }) => {
+      const filteredData = useMemo(() => {
+        if (activeThreshold === 'All Thresholds') return data;
+        const level = activeThreshold.toLowerCase();
+        return data.filter(row => Object.values(row.alerts).includes(level));
+      }, [data, activeThreshold]);
+
+      const formatNum = (n) => n === null || n === undefined ? '-' : n.toLocaleString();
+
+      return (
+        <div className="flex-1 overflow-hidden border-t border-gray-200">
+          <div className="flex h-full">
+            {/* Frozen columns */}
+            <div className="flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto scrollbar-thin" style={{width: 700}}>
+              <table className="w-full text-[11px]">
+                <thead className="sticky top-0 z-10">
+                  {/* Header row 1: Hierarchy */}
+                  <tr className="bg-grid-header">
+                    <th className="w-10 p-2 text-left font-medium text-gray-500 border-b border-r border-grid-border" rowSpan={4}>#</th>
+                    <th className="w-[140px] p-2 text-left font-medium text-gray-600 border-b border-r border-grid-border" rowSpan={4}>
+                      <div className="flex items-center gap-1">
+                        <span>Product Description</span>
+                        <Icon name="arrowUpDown" size={10} className="text-gray-400" />
+                      </div>
+                    </th>
+                    <th className="w-[120px] p-2 text-left font-medium text-gray-600 border-b border-r border-grid-border" rowSpan={4}>Customer Desc</th>
+                    <th className="w-[110px] p-2 text-left font-medium text-gray-600 border-b border-r border-grid-border" rowSpan={4}>DC Description</th>
+                    <th className="p-2 text-left font-medium text-gray-600 border-b border-grid-border" rowSpan={4}>
+                      <div className="flex items-center gap-1">
+                        <Icon name="filter" size={10} className="text-gray-400" />
+                        <span>Time Series</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((row, i) => (
+                    <tr key={row.id} className={`grid-cell border-b border-grid-border ${highlightedRows.includes(row.id) ? 'bg-e2open-light/60' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                      <td className="p-2 text-center text-gray-400 border-r border-grid-border">{row.id}</td>
+                      <td className="p-2 text-gray-800 font-medium border-r border-grid-border truncate">{row.product}</td>
+                      <td className="p-2 text-gray-600 border-r border-grid-border truncate">{row.customer}</td>
+                      <td className="p-2 text-gray-600 border-r border-grid-border">{row.dc}</td>
+                      <td className="p-2 text-gray-700 font-medium">{row.timeSeries}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Scrollable time columns */}
+            <div className="flex-1 overflow-auto scrollbar-thin">
+              <table className="w-full text-[11px]">
+                <thead className="sticky top-0 z-10">
+                  {/* Multi-level headers matching Figma */}
+                  <tr className="bg-grid-header">
+                    <th className="p-2 text-center font-medium text-gray-500 border-b border-r border-grid-border text-[10px]" colSpan={13}>
+                      <div className="flex items-center gap-1 justify-center">
+                        <span className="text-gray-400">←</span> FY 2024
+                      </div>
+                    </th>
+                  </tr>
+                  <tr className="bg-grid-header">
+                    <th className="border-b border-r border-grid-border" />
+                    <th className="p-2 text-center font-medium text-gray-500 border-b border-r border-grid-border text-[10px]" colSpan={12}>
+                      <div className="flex items-center gap-1 justify-center">
+                        <span className="text-gray-400">←</span> FY24 Q4
+                      </div>
+                    </th>
+                  </tr>
+                  <tr className="bg-grid-header">
+                    <th className="border-b border-r border-grid-border" colSpan={2} />
+                    <th className="p-2 text-center font-medium text-gray-500 border-b border-r border-grid-border text-[10px]" colSpan={11}>
+                      <div className="flex items-center gap-1 justify-center">
+                        <span className="text-gray-400">←</span> Nov 2024
+                      </div>
+                    </th>
+                  </tr>
+                  <tr className="bg-grid-header">
+                    {TIME_COLUMNS.map(col => (
+                      <th key={col} className="p-2 text-center font-medium text-gray-600 border-b border-r border-grid-border whitespace-nowrap min-w-[90px]">
+                        <div className="flex items-center gap-1 justify-center">
+                          <Icon name="filter" size={9} className="text-gray-300" />
+                          <span>{col}</span>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((row, i) => (
+                    <tr key={row.id} className={`border-b border-grid-border ${highlightedRows.includes(row.id) ? 'bg-e2open-light/60' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                      {TIME_COLUMNS.map(col => {
+                        const alert = row.alerts[col];
+                        const val = cellValues[`${row.id}-${col}`] !== undefined ? cellValues[`${row.id}-${col}`] : row.values[col];
+                        const isHighlighted = highlightedRows.includes(row.id) && highlightedCols.includes(col);
+                        const isEditing = editingCell === `${row.id}-${col}`;
+                        return (
+                          <td key={col}
+                            className={`p-0 border-r border-grid-border min-w-[90px] grid-cell ${alert ? getAlertStyles(alert) : ''} ${isHighlighted ? 'ai-glow ring-1 ring-e2open-accent/50' : ''}`}
+                            onClick={() => onCellClick(row.id, col, alert)}>
+                            {isEditing ? (
+                              <input type="text" autoFocus className="w-full h-full p-2 text-right text-[11px] bg-white outline-none border-2 border-e2open-primary rounded"
+                                defaultValue={val ?? ''}
+                                onBlur={(e) => {
+                                  const newVal = e.target.value === '' || e.target.value === '-' ? null : parseInt(e.target.value.replace(/,/g,''));
+                                  setCellValues(p => ({...p, [`${row.id}-${col}`]: newVal}));
+                                  setEditingCell(null);
+                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingCell(null); }}
+                              />
+                            ) : (
+                              <div className={`p-2 text-right cursor-pointer ${alert ? 'font-semibold' : ''}`}>
+                                {formatNum(val)}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── AI Assistant Panel ────────────────────────────────────────
+    const AIAssistantPanel = ({ open, onClose, suggestions, onApplySuggestion, onHighlight, activeSuggestion }) => {
+      const [chatMessages, setChatMessages] = useState([
+        { role: 'assistant', text: "Hi! I've analyzed your exception data and found **4 insights** that need attention. The most critical: EU Central revenue is at risk with a widening finance vs consensus gap. How can I help?" }
+      ]);
+      const [inputVal, setInputVal] = useState('');
+      const [isTyping, setIsTyping] = useState(false);
+      const chatEndRef = useRef(null);
+
+      useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [chatMessages]);
+
+      const handleSend = () => {
+        if (!inputVal.trim()) return;
+        const userMsg = inputVal.trim();
+        setChatMessages(p => [...p, { role: 'user', text: userMsg }]);
+        setInputVal('');
+        setIsTyping(true);
+
+        setTimeout(() => {
+          let response;
+          const lower = userMsg.toLowerCase();
+          if (lower.includes('fix') || lower.includes('resolve') || lower.includes('exception')) {
+            response = "I can help fix these exceptions. Based on pattern analysis:\n\n**Quick Fixes:**\n• Row 1 (11/04): Copy Finance Plan value → aligns with consensus\n• Row 4 (Nov): Increase forecast by 15% based on seasonal trend\n\n**Bulk Actions:**\n• Select \"Apply ML Correction\" to auto-fix 6 cells across 3 rows\n\nWant me to apply any of these?";
+          } else if (lower.includes('trend') || lower.includes('pattern') || lower.includes('forecast')) {
+            response = "**Trend Analysis — Last 8 Weeks:**\n\n📈 Demand is trending **+12%** above plan for EU Central\n📉 APAC demand is **stabilizing** within 5% variance \n⚠️ US West showing **holiday pull-forward** pattern\n\nThe ML model predicts convergence by Week 50 if finance plans are adjusted by **+8-12%** for EU/US regions.";
+          } else if (lower.includes('risk') || lower.includes('impact') || lower.includes('revenue')) {
+            response = "**Revenue Impact Summary:**\n\n🔴 **Critical:** $14.5K gap in EU Central (Lenovo T14)\n🟠 **High:** $22K potential stockout risk (Thinkpad X1)\n🟡 **Medium:** $8.2K correction needed (Dell Latitude)\n\n**Total at-risk revenue: $44.7K**\n\nApplying all AI suggestions would reduce risk by ~78%.";
+          } else if (lower.includes('explain') || lower.includes('why') || lower.includes('root cause')) {
+            response = "**Root Cause Analysis:**\n\nThe primary driver is a **timing mismatch** between finance plan updates and demand signals. Key factors:\n\n1. Finance plan was last updated 3 weeks ago\n2. Demand signals shifted +18% due to holiday promotions\n3. Consensus was recalculated but finance wasn't realigned\n\n**Recommendation:** Enable auto-sync between consensus and finance for weekly cadence.";
+          } else {
+            response = "I can help with:\n• **Fix exceptions** — auto-resolve or suggest corrections\n• **Trend analysis** — identify demand patterns\n• **Impact assessment** — quantify revenue at risk\n• **Root cause** — explain why exceptions occurred\n\nJust ask, or click an insight card to drill into it!";
+          }
+          setChatMessages(p => [...p, { role: 'assistant', text: response }]);
+          setIsTyping(false);
+        }, 1200);
+      };
+
+      if (!open) return null;
+
+      return (
+        <div className="w-[380px] flex-shrink-0 border-l border-gray-200 flex flex-col bg-white slide-in">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-e2open-primary/5 to-e2open-accent/5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-e2open-primary to-e2open-accent rounded-lg flex items-center justify-center">
+                  <Icon name="sparkles" size={14} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">AI Planning Assistant</h3>
+                  <p className="text-[10px] text-gray-500">Powered by e2open Intelligence</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+            {/* Exception summary */}
+            <div className="flex gap-2 mt-2">
+              {[
+                { label: 'Critical', count: 3, color: 'bg-red-500' },
+                { label: 'High', count: 4, color: 'bg-orange-500' },
+                { label: 'Medium', count: 3, color: 'bg-amber-500' },
+                { label: 'Low', count: 2, color: 'bg-yellow-400' }
+              ].map(s => (
+                <div key={s.label} className="flex items-center gap-1 bg-white rounded-md px-2 py-1 shadow-sm border border-gray-100">
+                  <div className={`w-1.5 h-1.5 rounded-full ${s.color}`} />
+                  <span className="text-[10px] text-gray-600">{s.count} {s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Insights Cards */}
+          <div className="p-3 border-b border-gray-100 max-h-[240px] overflow-y-auto scrollbar-thin">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-gray-700">AI Insights</span>
+              <span className="text-[10px] text-e2open-primary cursor-pointer hover:underline">View all</span>
+            </div>
+            {suggestions.map(s => (
+              <div key={s.id}
+                className={`mb-2 p-2.5 rounded-lg border cursor-pointer transition-all hover:shadow-md ${activeSuggestion === s.id ? 'border-e2open-primary bg-e2open-light/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+                onMouseEnter={() => onHighlight(s.affectedRows, s.affectedCols)}
+                onMouseLeave={() => onHighlight([], [])}
+                onClick={() => onHighlight(s.affectedRows, s.affectedCols)}>
+                <div className="flex items-start gap-2">
+                  <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${s.type === 'critical' ? 'bg-red-100 text-red-600' : s.type === 'high' ? 'bg-orange-100 text-orange-600' : s.type === 'medium' ? 'bg-amber-100 text-amber-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                    <Icon name={s.type === 'critical' ? 'alertTriangle' : s.type === 'high' ? 'trendingUp' : s.type === 'medium' ? 'target' : 'lightbulb'} size={11} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${s.type === 'critical' ? 'bg-red-100 text-red-700' : s.type === 'high' ? 'bg-orange-100 text-orange-700' : s.type === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700'}`}>{s.type.toUpperCase()}</span>
+                      <span className="text-[11px] font-semibold text-gray-800 truncate">{s.title}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">{s.description}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <button onClick={(e) => { e.stopPropagation(); onApplySuggestion(s); }}
+                        className="flex items-center gap-1 bg-e2open-primary text-white px-2 py-0.5 rounded text-[9px] font-medium hover:bg-e2open-primary/90 transition-colors">
+                        <Icon name="zap" size={9} />
+                        {s.action}
+                      </button>
+                      <span className="text-[9px] text-green-600 font-medium flex items-center gap-0.5">
+                        <Icon name="trendingUp" size={9} />
+                        {s.impact}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chat */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`fade-in flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[90%] rounded-lg px-3 py-2 text-[11px] leading-relaxed ${msg.role === 'user' ? 'bg-e2open-primary text-white rounded-br-none' : 'bg-gray-50 text-gray-700 border border-gray-100 rounded-bl-none'}`}>
+                    {msg.text.split('\n').map((line, j) => (
+                      <p key={j} className={j > 0 ? 'mt-1' : ''}>
+                        {line.split('**').map((part, k) => k % 2 === 1 ? <strong key={k}>{part}</strong> : part)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 rounded-bl-none">
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full ai-pulse" style={{animationDelay:'0ms'}} />
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full ai-pulse" style={{animationDelay:'300ms'}} />
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full ai-pulse" style={{animationDelay:'600ms'}} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            {/* Quick actions */}
+            <div className="px-3 pb-1">
+              <div className="flex flex-wrap gap-1">
+                {['Fix all exceptions','Show trends','Revenue impact','Root cause'].map(q => (
+                  <button key={q} onClick={() => { setInputVal(q); setTimeout(() => { setInputVal(''); setChatMessages(p => [...p, {role:'user',text:q}]); setIsTyping(true); setTimeout(() => { setIsTyping(false); setChatMessages(p => [...p, {role:'assistant',text:`Analyzing "${q}"... Let me look at the data.`}]); }, 1000); }, 100); }}
+                    className="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded-full text-[9px] text-gray-600 hover:bg-e2open-light hover:border-e2open-primary/20 hover:text-e2open-primary transition-all">
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Input */}
+            <div className="p-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 bg-gray-50 rounded-lg border border-gray-200 px-3 py-1.5 focus-within:border-e2open-primary/50 focus-within:ring-2 focus-within:ring-e2open-primary/10">
+                <input type="text" placeholder="Ask about exceptions, trends, or actions..."
+                  className="flex-1 bg-transparent text-[11px] outline-none placeholder-gray-400"
+                  value={inputVal} onChange={e => setInputVal(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSend(); }} />
+                <button onClick={handleSend} className="text-e2open-primary hover:text-e2open-primary/70 transition-colors">
+                  <Icon name="send" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── AI Notification Banner ────────────────────────────────────
+    const AIBanner = ({ show, onDismiss, onOpen }) => {
+      if (!show) return null;
+      return (
+        <div className="mx-5 mt-1 mb-0.5 bg-gradient-to-r from-e2open-primary/5 via-e2open-accent/5 to-purple-50 border border-e2open-primary/15 rounded-lg px-4 py-2 flex items-center justify-between fade-in">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-e2open-primary to-e2open-accent rounded-lg shadow-sm">
+              <Icon name="sparkles" size={15} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-800">AI found 4 exception insights with <span className="text-e2open-primary">$44.7K</span> revenue at risk</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">3 critical, 4 high severity — 6 cells can be auto-corrected by ML models</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={onOpen} className="flex items-center gap-1 bg-e2open-primary text-white px-3 py-1.5 rounded-lg text-[11px] font-medium hover:bg-e2open-primary/90 transition-colors shadow-sm">
+              <Icon name="zap" size={12} />
+              Review & Fix
+            </button>
+            <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600 p-1">
+              <Icon name="x" size={14} />
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── AI Cell Tooltip ───────────────────────────────────────────
+    const AICellTooltip = ({ show, position, cellInfo, onFix, onDismiss }) => {
+      if (!show) return null;
+      return (
+        <div className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 w-[280px] fade-in" style={{ top: position.y + 10, left: Math.min(position.x, window.innerWidth - 300) }}>
+          <div className="flex items-start gap-2">
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${cellInfo.alert === 'critical' ? 'bg-red-100 text-red-600' : cellInfo.alert === 'high' ? 'bg-orange-100 text-orange-600' : cellInfo.alert === 'medium' ? 'bg-amber-100 text-amber-600' : 'bg-yellow-100 text-yellow-600'}`}>
+              <Icon name="sparkles" size={13} />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xs font-semibold text-gray-800">AI Analysis</h4>
+              <p className="text-[10px] text-gray-500 mt-1 leading-relaxed">{cellInfo.insight}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <button onClick={onFix} className="flex items-center gap-1 bg-e2open-primary text-white px-2 py-1 rounded text-[10px] font-medium hover:bg-e2open-primary/90">
+                  <Icon name="zap" size={10} />
+                  {cellInfo.fixLabel}
+                </button>
+                <button onClick={onDismiss} className="text-[10px] text-gray-400 hover:text-gray-600">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── Main App ──────────────────────────────────────────────────
+    const App = () => {
+      const [activeThreshold, setActiveThreshold] = useState('All Thresholds');
+      const [aiPanelOpen, setAiPanelOpen] = useState(false);
+      const [showBanner, setShowBanner] = useState(true);
+      const [chartExpanded, setChartExpanded] = useState(false);
+      const [toggles, setToggles] = useState({ 'Expand hierarchy': true, 'Expand years': true, 'Expand Quarters': true, 'Expand Months': true });
+      const [highlightedRows, setHighlightedRows] = useState([]);
+      const [highlightedCols, setHighlightedCols] = useState([]);
+      const [activeSuggestion, setActiveSuggestion] = useState(null);
+      const [editingCell, setEditingCell] = useState(null);
+      const [cellValues, setCellValues] = useState({});
+      const [tooltip, setTooltip] = useState({ show: false, position: {x:0,y:0}, cellInfo: {} });
+      const [toast, setToast] = useState(null);
+
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      const handleCellClick = useCallback((rowId, col, alert) => {
+        if (alert) {
+          const insights = {
+            critical: { insight: 'This cell has a critical variance. The gap between finance and consensus has grown 34% in 3 weeks, driven by demand surge. ML model suggests aligning to consensus value.', fixLabel: 'Auto-align value' },
+            high: { insight: 'High variance detected. Demand signals are trending above plan due to seasonal pull-forward. Historical data suggests a 15% forecast adjustment.', fixLabel: 'Adjust +15%' },
+            medium: { insight: 'Moderate variance. Finance plan is consistently 18-25% below consensus. Statistical correction available with 85% confidence.', fixLabel: 'Apply correction' },
+            low: { insight: 'Low-level variance within acceptable range but trending. Consider pre-emptive adjustment to prevent escalation next period.', fixLabel: 'Pre-emptive fix' }
+          };
+          setTooltip({
+            show: true,
+            position: { x: event.clientX, y: event.clientY },
+            cellInfo: { ...insights[alert], alert, rowId, col }
+          });
+        } else {
+          setTooltip({ show: false, position: {x:0,y:0}, cellInfo: {} });
+          setEditingCell(`${rowId}-${col}`);
+        }
+      }, []);
+
+      const handleApplySuggestion = useCallback((suggestion) => {
+        // Simulate AI applying the fix
+        const newValues = { ...cellValues };
+        suggestion.affectedRows.forEach(rowId => {
+          suggestion.affectedCols.forEach(col => {
+            const row = GRID_DATA.find(r => r.id === rowId);
+            if (row && row.values[col] !== undefined) {
+              // Simulate ML correction: adjust value toward a "corrected" range
+              const currentVal = newValues[`${rowId}-${col}`] !== undefined ? newValues[`${rowId}-${col}`] : row.values[col];
+              if (currentVal !== null) {
+                newValues[`${rowId}-${col}`] = Math.round(currentVal * (suggestion.type === 'critical' ? 0.6 : suggestion.type === 'high' ? 1.15 : suggestion.type === 'medium' ? 1.12 : 0.92));
+              }
+            }
+          });
+        });
+        setCellValues(newValues);
+        setActiveSuggestion(suggestion.id);
+        showToast(`Applied "${suggestion.action}" — ${suggestion.impact}`);
+        setTimeout(() => setActiveSuggestion(null), 2000);
+      }, [cellValues]);
+
+      const handleHighlight = useCallback((rows, cols) => {
+        setHighlightedRows(rows);
+        setHighlightedCols(cols);
+      }, []);
+
+      return (
+        <div className="h-screen flex flex-col bg-white overflow-hidden">
+          <AppHeader />
+          <VersionSwitcher />
+          <PageTitle />
+          <Toolbar activeThreshold={activeThreshold} setActiveThreshold={setActiveThreshold} onAIToggle={() => { setAiPanelOpen(!aiPanelOpen); setShowBanner(false); }} aiPanelOpen={aiPanelOpen} />
+          <QuickFilters toggles={toggles} setToggles={setToggles} />
+          <AIBanner show={showBanner && !aiPanelOpen} onDismiss={() => setShowBanner(false)} onOpen={() => { setAiPanelOpen(true); setShowBanner(false); }} />
+          <ChartFilterBar expanded={chartExpanded} setExpanded={setChartExpanded} />
+
+          {/* Main content: grid + AI panel */}
+          <div className="flex-1 flex min-h-0">
+            <DataGrid data={GRID_DATA} activeThreshold={activeThreshold} highlightedRows={highlightedRows} highlightedCols={highlightedCols} onCellClick={handleCellClick} editingCell={editingCell} setEditingCell={setEditingCell} cellValues={cellValues} setCellValues={setCellValues} />
+            <AIAssistantPanel open={aiPanelOpen} onClose={() => setAiPanelOpen(false)} suggestions={AI_SUGGESTIONS} onApplySuggestion={handleApplySuggestion} onHighlight={handleHighlight} activeSuggestion={activeSuggestion} />
+          </div>
+
+          {/* AI Cell Tooltip */}
+          <AICellTooltip show={tooltip.show} position={tooltip.position} cellInfo={tooltip.cellInfo}
+            onFix={() => {
+              const { rowId, col, alert } = tooltip.cellInfo;
+              const row = GRID_DATA.find(r => r.id === rowId);
+              if (row) {
+                const current = cellValues[`${rowId}-${col}`] !== undefined ? cellValues[`${rowId}-${col}`] : row.values[col];
+                if (current !== null) {
+                  const factor = alert === 'critical' ? 0.6 : alert === 'high' ? 1.15 : alert === 'medium' ? 1.12 : 0.92;
+                  setCellValues(p => ({...p, [`${rowId}-${col}`]: Math.round(current * factor)}));
+                  showToast(`Cell corrected using AI analysis`);
+                }
+              }
+              setTooltip({ show: false, position:{x:0,y:0}, cellInfo:{} });
+            }}
+            onDismiss={() => setTooltip({ show: false, position:{x:0,y:0}, cellInfo:{} })} />
+
+          {/* Toast */}
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 fade-in">
+              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-xl border ${toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+                <Icon name={toast.type === 'success' ? 'check' : 'sparkles'} size={14} />
+                <span className="text-xs font-medium">{toast.message}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
