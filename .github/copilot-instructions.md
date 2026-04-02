@@ -27,7 +27,7 @@ Build UI prototypes from Figma mockups for the S&OP Exception Planning applicati
 - Versioned files: `prototypes/version-{n}.html`
 
 ### GitHub Repository
-- Remote: `https://github.com/BhanuTirumala-WTG/sop-exception-planning.git`
+- Remote: `https://github.com/BhanuTirumala-WTG/figma-to-prototype-pipeline.git`
 - Default branch: `main`
 
 ---
