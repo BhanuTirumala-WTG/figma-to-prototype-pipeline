@@ -1,6 +1,6 @@
-# S&OP — Exception Planning
+# Figma to Prototype
 
-UI prototypes for the S&OP Exception Planning application, built from Figma mockups using a multi-agent Copilot pipeline.
+UI prototypes for the applications using Modern Harmony design system, built from Figma mockups using a multi-agent Copilot pipeline.
 
 ## How to Use
 
